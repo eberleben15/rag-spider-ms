@@ -35,3 +35,7 @@ def clean_links(base_url: str, raw_links: list[str]) -> list[str]:
             seen.add(absolute)
             filtered.append(absolute)
     return filtered
+
+def is_downloadable_asset(url: str) -> bool:
+    parsed = urlparse(url)
+    return parsed.path.lower().endswith((".pdf", ".csv", ".doc", ".docx", ".xls", ".xlsx"))

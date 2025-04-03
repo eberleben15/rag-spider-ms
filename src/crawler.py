@@ -1,7 +1,7 @@
 import httpx
 import asyncio
 from bs4 import BeautifulSoup
-from src.utils import normalize_url, clean_links
+from src.utils import normalize_url, clean_links, is_downloadable_asset
 from src.logger import get_logger
 
 logger = get_logger(__name__)
@@ -35,13 +35,18 @@ async def crawl_url(session: httpx.AsyncClient, url: str, depth: int, visited: s
     links = [a.get("href") for a in soup.find_all("a", href=True)]
     child_links = clean_links(url, links)
 
+    # NEW: Separate downloadable assets
+    asset_links = [link for link in child_links if is_downloadable_asset(link)]
+    crawlable_links = [link for link in child_links if not is_downloadable_asset(link)]
+
     result = [{
         "url": url,
         "html": html,
-        "depth": depth
+        "depth": depth,
+        "assets": asset_links
     }]
 
-    tasks = [crawl_url(session, link, depth - 1, visited) for link in child_links]
+    tasks = [crawl_url(session, link, depth - 1, visited) for link in crawlable_links]
     children = await asyncio.gather(*tasks)
     for sublist in children:
         result.extend(sublist)
